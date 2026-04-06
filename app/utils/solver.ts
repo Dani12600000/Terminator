@@ -19,72 +19,85 @@ export interface Attempt {
 export function filterCandidates(attempts: Attempt[], allWords: string[] = WORD_LIST): string[] {
   if (attempts.length === 0) return allWords
 
-  // Build constraint sets
-  const correctPositions: Map<number, string> = new Map()   // position -> letter
-  const presentLetters: Map<string, Set<number>> = new Map() // letter -> positions where it's NOT
-  const absentLetters: Set<string> = new Set()
-  const minCounts: Map<string, number> = new Map() // minimum required count of each letter
+  const correctPositions: Map<number, string> = new Map()
+  const presentLetters: Map<string, Set<number>> = new Map()
+  const minCounts: Map<string, number> = new Map()
+  const exactCounts: Map<string, number> = new Map()
 
   for (const attempt of attempts) {
     const word = attempt.word.toLowerCase()
     const results = attempt.results
 
-    // Count how many times each letter appears as correct or present
     const positiveCounts: Map<string, number> = new Map()
     for (let i = 0; i < 5; i++) {
       const letter = word[i]
-      if (results[i] === 'correct' || results[i] === 'present') {
+      const state = results[i]
+      if (letter && (state === 'correct' || state === 'present')) {
         positiveCounts.set(letter, (positiveCounts.get(letter) ?? 0) + 1)
       }
     }
 
-    for (const [letter, count] of positiveCounts) {
-      const current = minCounts.get(letter) ?? 0
-      if (count > current) minCounts.set(letter, count)
+    const attemptLetters = new Set(word)
+    for (const letter of attemptLetters) {
+      const pCount = positiveCounts.get(letter) ?? 0
+      
+      let hasAbsent = false
+      for (let i = 0; i < 5; i++) {
+        const w = word[i]
+        const state = results[i]
+        if (w === letter && state === 'absent') {
+          hasAbsent = true
+          break
+        }
+      }
+
+      if (hasAbsent) {
+        // If exact count is already set to something else, there's a conflict.
+        // We just keep the latest or the largest. By rules, it should be exact.
+        exactCounts.set(letter, pCount)
+      } else {
+        const current = minCounts.get(letter) ?? 0
+        if (pCount > current) minCounts.set(letter, pCount)
+      }
     }
 
     for (let i = 0; i < 5; i++) {
       const letter = word[i]
       const state = results[i]
 
+      if (!letter || !state) continue
+
       if (state === 'correct') {
         correctPositions.set(i, letter)
-      } else if (state === 'present') {
+      } else if (state === 'present' || state === 'absent') {
         if (!presentLetters.has(letter)) presentLetters.set(letter, new Set())
         presentLetters.get(letter)!.add(i)
-      } else if (state === 'absent') {
-        // Only mark absent if it doesn't appear as correct/present anywhere else in same attempt
-        if (!positiveCounts.has(letter)) {
-          absentLetters.add(letter)
-        }
       }
     }
   }
 
   return allWords.filter(candidate => {
-    // Check correct positions
     for (const [pos, letter] of correctPositions) {
       if (candidate[pos] !== letter) return false
     }
 
-    // Check present letters (must exist but not in excluded positions)
     for (const [letter, excludedPositions] of presentLetters) {
-      const idx = candidate.split('').findIndex((l, i) => l === letter && !excludedPositions.has(i))
-      if (idx === -1) return false
-    }
-
-    // Check absent letters
-    for (const letter of absentLetters) {
-      // Absent only truly means absent if not a required letter
-      if (!presentLetters.has(letter) && !correctPositions.values().toString().includes(letter)) {
-        if (candidate.includes(letter)) return false
+      for (const pos of excludedPositions) {
+        if (candidate[pos] === letter) return false
       }
     }
 
-    // Check minimum counts
+    const candidateCounts = new Map<string, number>()
+    for (const char of candidate) {
+      candidateCounts.set(char, (candidateCounts.get(char) ?? 0) + 1)
+    }
+
     for (const [letter, minCount] of minCounts) {
-      const count = candidate.split('').filter(l => l === letter).length
-      if (count < minCount) return false
+      if ((candidateCounts.get(letter) ?? 0) < minCount) return false
+    }
+
+    for (const [letter, exactCount] of exactCounts) {
+      if ((candidateCounts.get(letter) ?? 0) !== exactCount) return false
     }
 
     return true
@@ -131,19 +144,21 @@ function getPattern(guess: string, answer: string): string {
 
   // First pass: mark correct
   for (let i = 0; i < 5; i++) {
-    if (guess[i] === answer[i]) {
+    const g = guess[i]
+    if (g && g === answer[i]) {
       result[i] = 'c'
-      answerCounts.set(guess[i], answerCounts.get(guess[i])! - 1)
+      answerCounts.set(g, answerCounts.get(g)! - 1)
     }
   }
 
   // Second pass: mark present
   for (let i = 0; i < 5; i++) {
-    if (result[i] !== 'c') {
-      const count = answerCounts.get(guess[i]) ?? 0
+    const g = guess[i]
+    if (g && result[i] !== 'c') {
+      const count = answerCounts.get(g) ?? 0
       if (count > 0) {
         result[i] = 'p'
-        answerCounts.set(guess[i], count - 1)
+        answerCounts.set(g, count - 1)
       }
     }
   }

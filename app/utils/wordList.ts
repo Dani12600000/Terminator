@@ -3279,6 +3279,7 @@ export const WORD_LIST: string[] = [
   "manas",
   "manau",
   "manca",
+  "manco",
   "manda",
   "mandi",
   "mando",
