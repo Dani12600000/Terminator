@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-neutral-900 text-white flex flex-col">
     <!-- Header -->
     <header class="border-b border-neutral-700 py-4 px-4 flex items-center justify-center relative">
-      <img src="/images/logo.png" alt="Terminator Logo" class="h-8 w-8 mr-3" />
+      <img :src="logoPath" alt="Terminator Logo" class="h-8 w-8 mr-3" />
       <h1 class="text-3xl font-bold tracking-widest uppercase text-white font-mono">Terminator</h1>
       <p class="absolute right-4 text-xs text-neutral-500 hidden sm:block">Solver para o Termo</p>
     </header>
@@ -100,6 +100,9 @@ import type { LetterState, Attempt } from '~/utils/solver'
 import { filterCandidates, getSuggestions } from '~/utils/solver'
 
 const COLS = 5
+
+const runtimeConfig = useRuntimeConfig()
+const logoPath = computed(() => `${runtimeConfig.app.baseURL}images/logo.png`)
 
 const modes = [
   { label: 'Termo', value: 1, rows: 6 },

@@ -6,5 +6,9 @@ export default defineNuxtConfig({
   ssr: false,
   app: {
     baseURL: '/Terminator/',
+    buildAssetsDir: '/_nuxt/',
+  },
+  nitro: {
+    baseURL: '/Terminator/',
   },
 })
