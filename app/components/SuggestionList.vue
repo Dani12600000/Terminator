@@ -1,10 +1,17 @@
 <template>
   <div class="w-full">
     <h2 class="text-neutral-400 text-sm font-semibold uppercase tracking-widest mb-3">
-      Sugestões do Solver
+      {{ isSolved ? 'Palavra Encontrada' : 'Sugestões do Solver' }}
     </h2>
 
-    <div v-if="candidates === 0" class="text-neutral-500 text-sm">
+    <div v-if="isSolved" class="flex flex-col gap-2">
+      <div class="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-green-600/10 border border-green-600/30">
+        <span class="text-green-500 font-bold text-lg uppercase tracking-[0.2em]">{{ suggestions[0] }}</span>
+        <span class="ml-auto text-[10px] text-green-400 font-bold uppercase">Resolvido</span>
+      </div>
+    </div>
+
+    <div v-else-if="candidates === 0" class="text-neutral-500 text-sm">
       Nenhuma palavra encontrada com essas restrições.
     </div>
 
@@ -34,5 +41,6 @@
 defineProps<{
   suggestions: string[]
   candidates: number
+  isSolved?: boolean
 }>()
 </script>

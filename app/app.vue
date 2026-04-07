@@ -25,10 +25,14 @@
       <div class="flex flex-wrap justify-center gap-x-12 gap-y-8 w-full">
         <div v-for="(board, bIdx) in boards" :key="bIdx" class="flex flex-col xl:flex-row gap-6 items-start">
           <div class="flex flex-col items-center gap-2">
-             <div class="text-sm font-bold text-neutral-500 tracking-widest uppercase mb-1">Palavra {{ bIdx + 1 }}</div>
+             <div class="text-sm font-bold tracking-widest uppercase mb-1 flex items-center gap-2">
+               <span :class="isBoardSolved(board) ? 'text-green-500' : 'text-neutral-500'">Palavra {{ bIdx + 1 }}</span>
+               <span v-if="isBoardSolved(board)" class="bg-green-600/20 text-green-500 px-2 py-0.5 rounded text-[10px] border border-green-600/30 animate-pulse">✓ RESOLVIDA</span>
+             </div>
              <GameBoard
               :rows="board.rows"
               :currentRow="currentRow"
+              :class="{ 'opacity-80 grayscale-[0.2]': isBoardSolved(board) }"
               @cellClick="(rIdx, cIdx) => handleCellClick(bIdx, rIdx, cIdx)"
             />
           </div>
@@ -37,6 +41,7 @@
             <SuggestionList
               :suggestions="board.suggestions"
               :candidates="board.candidateCount"
+              :is-solved="isBoardSolved(board)"
             />
           </div>
         </div>
@@ -166,6 +171,9 @@ function syncCurrentRowLetters() {
   const word = inputWord.value.padEnd(5, '')
   
   boards.value.forEach(board => {
+    // Se a palavra já foi descoberta nesta board, não escreve nela
+    if (isBoardSolved(board)) return
+
     const row = board.rows[currentRow.value]
     if (row) {
       for (let i = 0; i < COLS; i++) {
@@ -179,13 +187,19 @@ function syncCurrentRowLetters() {
   })
 }
 
+function isBoardSolved(board: BoardState) {
+  return board.attempts.some(a => a.results.every(r => r === 'correct'))
+}
+
 function handleCellClick(boardIndex: number, rowIndex: number, colIndex: number) {
-  const cell = boards.value[boardIndex]?.rows[rowIndex]?.[colIndex]
+  const board = boards.value[boardIndex]
+  if (!board || isBoardSolved(board)) return
+  
+  const cell = board.rows[rowIndex]?.[colIndex]
   if (!cell || !cell.letter) return
   const cycle: LetterState[] = ['absent', 'present', 'correct']
   const current = cell.state === 'empty' ? 'absent' : cell.state
   const nextIndex = (cycle.indexOf(current) + 1) % cycle.length
-  // Fix strict array indexing: cycle[nextIndex] could be inferred as LetterState | undefined
   cell.state = cycle[nextIndex] ?? 'absent'
 }
 
@@ -196,6 +210,9 @@ function submitAttempt() {
   const word = inputWord.value.toLowerCase()
 
   boards.value.forEach((board, bIdx) => {
+    // Se a board já foi resolvida em tentativas anteriores, não faz nada
+    if (isBoardSolved(board)) return
+
     const row = board.rows[rowIdx]
     if (!row) return
 
@@ -234,26 +251,30 @@ function undo() {
   let lastWord = ''
 
   boards.value.forEach((board, index) => {
-    const popped = board.attempts.pop()
-    if (index === 0 && popped) {
-      lastWord = popped.word
-    }
-
-    const row = board.rows[currentRow.value]
-    if (row) {
-      for (let i = 0; i < COLS; i++) {
-        const cell = row[i]
-        if (cell) {
-          cell.letter = ''
-          cell.state = 'empty'
+    // Só faz pop se a board tiver uma tentativa nesta linha
+    if (board.attempts.length > currentRow.value) {
+      const popped = board.attempts.pop()
+      if (index === 0 && popped) {
+        lastWord = popped.word
+      }
+      
+      // Limpa a linha no UI (seja ela a de solução ou uma posterior)
+      const row = board.rows[currentRow.value]
+      if (row) {
+        for (let i = 0; i < COLS; i++) {
+          const cell = row[i]
+          if (cell) {
+            cell.letter = ''
+            cell.state = 'empty'
+          }
         }
       }
-    }
 
-    // Recompute suggestions with previous attempts
-    const candidates = filterCandidates(board.attempts)
-    board.candidateCount = candidates.length
-    board.suggestions = getSuggestions(candidates)
+      // Recompute suggestions with previous attempts
+      const candidates = filterCandidates(board.attempts)
+      board.candidateCount = candidates.length
+      board.suggestions = getSuggestions(candidates)
+    }
   })
 
   inputWord.value = lastWord
