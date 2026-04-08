@@ -4781,6 +4781,7 @@ export const WORD_LIST: string[] = [
   "risor",
   "risso",
   "ritas",
+  "ritmo",
   "rival",
   "rixar",
   "rixas",
