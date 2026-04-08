@@ -7,6 +7,15 @@ export default defineNuxtConfig({
   app: {
     baseURL: '/Terminator/',
     buildAssetsDir: '/_nuxt/',
+    head: {
+      title: 'Terminator - Solver para o Termo',
+      meta: [
+        { name: 'description', content: 'Solver avançado para o jogo Termo, Dueto e Quarteto.' }
+      ],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/Terminator/favicon.ico' }
+      ]
+    }
   },
   nitro: {
     baseURL: '/Terminator/',
