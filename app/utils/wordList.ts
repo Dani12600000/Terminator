@@ -1725,7 +1725,6 @@ export const WORD_LIST: string[] = [
   "durez",
   "durim",
   "durne",
-  "durol",
   "duros",
   "durra",
   "duvol",
