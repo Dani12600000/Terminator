@@ -5699,6 +5699,8 @@ export const WORD_LIST: string[] = [
   "unhar",
   "unhas",
   "unida",
+  "unido",
+  "unico",
   "unioa",
   "unona",
   "untar",
