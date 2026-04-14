@@ -9,6 +9,9 @@ dist
 # Node dependencies
 node_modules
 
+# Repositório externo de palavras portuguesas
+vendor/
+
 # Logs
 logs
 *.log

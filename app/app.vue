@@ -52,6 +52,7 @@
               :suggestions="board.suggestions"
               :candidates="board.candidateCount"
               :is-solved="isBoardSolved(board)"
+              @select-word="selectWord"
             />
           </div>
         </div>
@@ -394,6 +395,11 @@ function undo() {
   })
 
   inputWord.value = lastWord
+  syncCurrentRowLetters()
+}
+
+function selectWord(word: string) {
+  inputWord.value = word
   syncCurrentRowLetters()
 }
 

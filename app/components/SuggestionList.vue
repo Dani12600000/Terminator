@@ -23,7 +23,8 @@
       <div
         v-for="(word, index) in suggestions"
         :key="word"
-        class="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-neutral-800 border border-neutral-700"
+        class="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-neutral-800 border border-neutral-700 cursor-pointer hover:bg-neutral-700 hover:border-neutral-500 active:scale-95 transition-all select-none"
+        @click="emit('selectWord', word)"
       >
         <span class="text-neutral-500 text-xs w-4 text-right">{{ index + 1 }}.</span>
         <span class="text-white font-bold text-lg uppercase tracking-widest">{{ word }}</span>
@@ -42,5 +43,9 @@ defineProps<{
   suggestions: string[]
   candidates: number
   isSolved?: boolean
+}>()
+
+const emit = defineEmits<{
+  selectWord: [word: string]
 }>()
 </script>
